@@ -88,7 +88,7 @@ class DailySummarizer:
         # Use client's max_tokens if available, otherwise default to a safe value
         max_tokens = getattr(self.client, "max_tokens", 4096)
 
-        summary = await self.client.complete(
+        raw_response = await self.client.complete(
             system=DAILY_SUMMARY_SYSTEM,
             user=user_prompt,
             temperature=0.5,
@@ -103,7 +103,77 @@ class DailySummarizer:
 ---
 
 """
-        return header + summary.strip()
+        try:
+            # Clean response if it contains markdown code blocks
+            text = raw_response
+            if "```json" in text:
+                text = text.split("```json")[1].split("```")[0].strip()
+            elif "```" in text:
+                text = text.split("```")[1].strip()
+
+            data = json.loads(text)
+        except json.JSONDecodeError:
+            # If JSON parsing fails, return raw response as fallback
+            return header + raw_response.strip()
+
+        # Build markdown programmatically
+        sections = []
+
+        # Highlights section
+        if data.get("highlights"):
+            sections.append("## Today's Highlights ⭐️\n")
+            for item in data["highlights"]:
+                sections.append(self._format_item(item))
+
+        # Other sections
+        for section in data.get("sections", []):
+            title = section.get("title", "Other Updates")
+            sections.append(f"## {title}\n")
+            for item in section.get("items", []):
+                sections.append(self._format_item(item))
+
+        return header + "\n".join(sections)
+
+    def _format_item(self, item: dict) -> str:
+        """Format a single item into Markdown with explicit spacing."""
+        title = item.get("title", "Untitled").replace("[", "(").replace("]", ")")
+        url = item.get("url", "#")
+        score = item.get("score", "?")
+        summary = item.get("summary", "")
+
+        # Format sources
+        sources = item.get("sources", [])
+        if isinstance(sources, list):
+            sources_str = ", ".join(sources)
+        else:
+            sources_str = str(sources)
+
+        # Format tags
+        tags = item.get("tags", [])
+        if isinstance(tags, list):
+            tags_str = ", ".join([f"`#{t}`" for t in tags])
+        else:
+            tags_str = ""
+
+        # Build item markdown block - using headlines and explicit spacing
+        lines = [
+            f"### [{title}]({url}) ⭐️ {score}/10",
+            "",
+            f"{summary}",
+            "",
+            f"*Sources: {sources_str}*"
+        ]
+
+        if item.get("community_perspective"):
+            lines.append("")
+            lines.append(f"**Community**: {item['community_perspective']}")
+
+        if tags_str:
+            lines.append("")
+            lines.append(f"**Tags**: {tags_str}")
+
+        # separator for clarity
+        return "\n".join(lines) + "\n\n---\n\n"
 
     def _generate_empty_summary(self, date: str, total_fetched: int) -> str:
         """Generate summary when no high-scoring items were found.

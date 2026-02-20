@@ -72,30 +72,52 @@ Your summaries should:
 - **CRITICAL: Merge items about the same topic/event from different sources into ONE entry.** If the same event (e.g., a product launch) appears from Hacker News, RSS, and Twitter, combine them into a single entry noting all sources and perspectives.
 - When community discussion (comments, replies) is available, include a "Community Perspective" or "Discussion Highlights" subsection that captures the most insightful viewpoints, debates, or counter-arguments from the community.
 - Distinguish between the original content/announcement and community reaction.
+
+Respond ONLY with valid JSON following this schema:
+{
+  "highlights": [
+    {
+      "title": "Title of the highlight",
+      "url": "http://...",
+      "score": 9.5,
+      "summary": "One sentence summary...",
+      "sources": ["source1", "source2"],
+      "community_perspective": "Optional community discussion summary...",
+      "tags": ["tag1", "tag2"]
+    }
+  ],
+  "sections": [
+    {
+      "title": "Section Name (e.g. AI/ML, Systems)",
+      "items": [
+        {
+          "title": "Title of the item",
+          "url": "http://...",
+          "score": 8.0,
+          "summary": "One sentence summary...",
+          "sources": ["source1", "source2"],
+          "community_perspective": "Optional community discussion summary...",
+          "tags": ["tag1", "tag2"]
+        }
+      ]
+    }
+  ]
+}
 """
 
-DAILY_SUMMARY_USER = """Create a Markdown daily summary for {date}.
+DAILY_SUMMARY_USER = """Create a JSON daily summary for {date}.
 
-Organize the {count} high-scoring items below into logical sections (e.g., "AI/ML", "Systems", "Tools", "Research").
+Organize the {count} high-scoring items into "highlights" (score >= 9.0) and other logical sections in "sections".
 
 **IMPORTANT RULES:**
 1. **Merge duplicates**: Items about the same topic from different sources MUST be combined into ONE entry. List all sources. Do NOT repeat the same story multiple times.
-2. **Community perspective**: For items with comments/discussion data, add a brief "💬 Community" line summarizing the most interesting viewpoints, debates, or counter-arguments.
-3. Start with a "Today's Highlights ⭐️" section for items scoring 9+.
-4. **Spacing**: Ensure there is an empty line between each item to support proper HTML rendering.
-
-For each item, strictly follow this format:
-- **[Title](URL)** (Ensure the title is a clickable link to the content)
-- Score badge (⭐️ X.X/10) — use the highest score if merged
-- One-sentence summary
-- All sources (e.g., "Sources: hackernews, rss/Simon Willison, twitter/OpenAI")
-- 💬 Community perspective if discussion data is available
-- Key tags
+2. **Community perspective**: For items with comments/discussion data, add a brief "community_perspective" field summarizing the most interesting viewpoints.
+3. **URLs**: Ensure every item has a valid `url` field pointing to the primary source.
 
 Items:
 {items_json}
 
-Generate a well-formatted Markdown document with clear sections and proper emphasis. ensure blank lines between items."""
+Ensure valid JSON output."""
 
 SOURCE_RECOMMENDATION_SYSTEM = """You are an expert at identifying valuable information sources in technology and research.
 
