@@ -7,7 +7,7 @@
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json&style=flat-square)](https://github.com/astral-sh/uv)
-[![CI Status](https://github.com/thysrael/horizon/actions/workflows/ci.yml/badge.svg?style=flat-square)](https://github.com/thysrael/horizon/actions)
+[![Daily Summary](https://github.com/thysrael/horizon/actions/workflows/daily-summary.yml/badge.svg?style=flat-square)](https://github.com/thysrael/horizon/actions)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
 
 <p align="center">
@@ -15,8 +15,6 @@
 </p>
 
 *Horizon monitors academic peers and social trends across multiple platforms, using AI to filter effectively important content.*
-
-[Features](#features) • [Installation](#quick-start) • [Configuration](#2-configuration) • [Usage](#3-run-the-aggregator)
 
 </div>
 
