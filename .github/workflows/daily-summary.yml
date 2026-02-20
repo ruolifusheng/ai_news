@@ -42,3 +42,4 @@ jobs:
           publish_dir: ./docs
           commit_message: "📝 Daily Summary: $(date +'%Y-%m-%d')"
           publish_branch: gh-pages
+          enable_jekyll: true
