@@ -2,7 +2,7 @@ name: Daily Horizon Summary
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs daily at 00:00 UTC
+    - cron: '0 0 */3 * *'  # Runs every 3 days at 00:00 UTC
   workflow_dispatch:      # Allow manual trigger
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-        run: uv run horizon --hours 24
+        run: uv run horizon --hours 72
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
