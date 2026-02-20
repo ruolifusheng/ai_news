@@ -128,31 +128,13 @@ The system will:
 3. Use AI to analyze and score new content
 4. Generate a summary markdown file in `data/summaries/` (e.g., `data/summaries/horizon-2024-02-20.md`)
 
-## Project Structure
-
-- `src/scrapers/`: Modules for fetching data from GitHub, HN, RSS, Twitter
-- `src/ai/`: AI client wrappers (OpenAI, Anthropic, Gemini) and prompt logic
-- `src/storage/`: Manages tracking of seen items and saving summaries
-- `data/`: Stores configuration, state (`seen.json`), and generated summaries
-
-## Development
-
-```bash
-# Format code
-uv run ruff check .
-```
-
-First run will:
-1. Fetch content from configured sources
-2. Analyze with AI (scores 0-10)
-3. Generate `data/summaries/horizon-YYYY-MM-DD.md`
-4. Save state to `data/seen.json`
 
 ## Configuration Guide
 
 ### AI Providers
 
-**Anthropic Claude** (recommended):
+**Anthropic Claude**:
+
 ```json
 {
   "ai": {
@@ -164,6 +146,7 @@ First run will:
 ```
 
 **OpenAI**:
+
 ```json
 {
   "ai": {
@@ -175,6 +158,7 @@ First run will:
 ```
 
 **Custom Base URL** (for proxies):
+
 ```json
 {
   "ai": {
@@ -188,6 +172,7 @@ First run will:
 ### Information Sources
 
 **GitHub**:
+
 ```json
 {
   "sources": {
@@ -209,6 +194,7 @@ First run will:
 ```
 
 **Hacker News**:
+
 ```json
 {
   "hackernews": {
@@ -220,6 +206,7 @@ First run will:
 ```
 
 **RSS Feeds**:
+
 ```json
 {
   "rss": [
@@ -234,6 +221,14 @@ First run will:
 ```
 
 ### Filtering
+
+Content is scored 0-10:
+
+- **9-10**: Groundbreaking - Major breakthroughs, paradigm shifts
+- **7-8**: High Value - Important developments, deep technical content
+- **5-6**: Interesting - Worth knowing but not urgent
+- **3-4**: Low Priority - Generic or routine content
+- **0-2**: Noise - Spam, off-topic, or trivial
 
 ```json
 {
@@ -277,76 +272,10 @@ horizon/
 └── logs/                   # Application logs
 ```
 
-## AI Scoring System
-
-Content is scored 0-10:
-
-- **9-10**: Groundbreaking - Major breakthroughs, paradigm shifts
-- **7-8**: High Value - Important developments, deep technical content
-- **5-6**: Interesting - Worth knowing but not urgent
-- **3-4**: Low Priority - Generic or routine content
-- **0-2**: Noise - Spam, off-topic, or trivial
-
-Only content scoring ≥ `ai_score_threshold` appears in daily summaries.
-
-## Output Format
-
-Daily summaries are saved as `data/summaries/horizon-YYYY-MM-DD.md`:
-
-```markdown
-# Horizon Daily - 2026-02-20
-
-> From 156 items, 18 important content pieces were selected
-
----
-
-## Today's Highlights ⭐️
-
-### [Major Linux Kernel Performance Improvement](https://github.com/...) ⭐️ 9.5/10
-
-Significant optimization reducing context switch overhead by 40%.
-
-- **Source**: github/torvalds
-- **Why Important**: Impacts all Linux systems
-- **Tags**: #kernel #performance #systems
-
-## AI/ML
-
-[... more categorized content ...]
-
----
-
-## 💡 Recommended Sources
-
-Consider following these based on today's high-quality content...
-```
-
-## Troubleshooting
-
-**No high-scoring content**:
-- Lower `ai_score_threshold` in config
-- Add more diverse sources
-- Check AI API is working
-
-**Rate limiting errors**:
-- Add `GITHUB_TOKEN` to `.env`
-- Reduce `fetch_top_stories` for Hacker News
-- Increase `time_window_hours` to spread requests
-
-**Missing dependencies**:
-```bash
-uv sync  # Reinstall all dependencies
-```
-
-
-
-## License
-
-MIT License - See LICENSE file for details
-
 ## Contributing
 
 Contributions welcome! Please:
+
 1. Fork the repository
 2. Create a feature branch
 3. Submit a pull request
