@@ -245,7 +245,7 @@ Content is scored 0-10:
 ## Roadmap
 
 - [X] Twitter/X integration (via official API)
-- [ ] More sources (Reddit, ArXiv, ...)
+- [X] More sources (Reddit, ArXiv, ...)
 - [ ] Track news history/context
 - [ ] Cross-source comprehensive analysis
 - [ ] GitHub Actions workflow

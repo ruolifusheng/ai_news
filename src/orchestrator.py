@@ -18,6 +18,8 @@ from .ai.client import create_ai_client
 from .ai.analyzer import ContentAnalyzer
 from .ai.summarizer import DailySummarizer
 from .ai.recommender import SourceRecommender
+from .ai.enricher import ContentEnricher
+from .search import search_related
 
 
 class HorizonOrchestrator:
@@ -79,21 +81,24 @@ class HorizonOrchestrator:
                 f"⭐️ {len(important_items)} items scored ≥ {threshold}\n"
             )
 
-            # 6. Generate daily summary
+            # 6. Search related stories + enrich with background knowledge (2nd AI pass)
+            await self._enrich_important_items(important_items)
+
+            # 7. Generate daily summary
             today = datetime.utcnow().strftime("%Y-%m-%d")
             summary = await self._generate_summary(important_items, today, len(all_items))
 
-            # 7. Recommend new sources
+            # 8. Recommend new sources
             recommendations = await self._recommend_sources(analyzed_items)
 
-            # 8. Save summary with recommendations
+            # 9. Save summary with recommendations
             if recommendations:
                 summary += self._format_recommendations(recommendations)
 
             summary_path = self.storage.save_daily_summary(today, summary)
             self.console.print(f"💾 Saved summary to: {summary_path}\n")
 
-            # 8.5. Copy summary to docs/ for GitHub Pages
+            # 9.5. Copy summary to docs/ for GitHub Pages
             try:
                 import shutil
                 from pathlib import Path
@@ -263,6 +268,34 @@ class HorizonOrchestrator:
 
         return merged
 
+    async def _enrich_important_items(self, items: List[ContentItem]) -> None:
+        """Search for related stories and enrich items with background knowledge.
+
+        This is the second AI pass: for each item that passed the score threshold,
+        search for related stories on HN/Reddit, then call AI to generate
+        background knowledge and synthesize related context.
+
+        Args:
+            items: Important items to enrich (modified in-place)
+        """
+        if not items:
+            return
+
+        # Step 1: Search for related stories
+        self.console.print(f"🔎 Searching related stories for {len(items)} items...")
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            related_map = await search_related(items, client)
+
+        found = sum(len(v) for v in related_map.values())
+        self.console.print(f"   Found {found} related stories\n")
+
+        # Step 2: AI enrichment (background knowledge + related context)
+        self.console.print("📚 Enriching with background knowledge...")
+        ai_client = create_ai_client(self.config.ai)
+        enricher = ContentEnricher(ai_client)
+        await enricher.enrich_batch(items, related_map)
+        self.console.print(f"   Enriched {len(items)} items\n")
+
     async def _analyze_content(self, items: List[ContentItem]) -> List[ContentItem]:
         """Analyze content items with AI.
 
@@ -283,12 +316,12 @@ class HorizonOrchestrator:
         self,
         items: List[ContentItem],
         date: str,
-        total_fetched: int
+        total_fetched: int,
     ) -> str:
         """Generate daily summary.
 
         Args:
-            items: Important items to include
+            items: Important items to include (already enriched with background/related)
             date: Date string
             total_fetched: Total items fetched
 

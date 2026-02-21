@@ -24,12 +24,12 @@ class DailySummarizer:
         self,
         items: List[ContentItem],
         date: str,
-        total_fetched: int
+        total_fetched: int,
     ) -> str:
         """Generate daily summary in Markdown format.
 
         Args:
-            items: High-scoring content items to include
+            items: High-scoring content items to include (enriched via metadata)
             date: Date string (YYYY-MM-DD)
             total_fetched: Total number of items fetched before filtering
 
@@ -73,6 +73,14 @@ class DailySummarizer:
             if item.content and "--- Top Comments ---" in item.content:
                 comments_part = item.content.split("--- Top Comments ---", 1)[1]
                 entry["top_comments"] = comments_part[:1200]
+
+            # Include pre-computed enrichment data from metadata
+            if meta.get("background"):
+                entry["background"] = meta["background"]
+            if meta.get("related_context"):
+                entry["related_context"] = meta["related_context"]
+            if meta.get("related_stories"):
+                entry["related_stories"] = meta["related_stories"]
 
             items_data.append(entry)
 
@@ -171,6 +179,18 @@ class DailySummarizer:
         if item.get("community_perspective"):
             lines.append("")
             lines.append(f"**Community**: {item['community_perspective']}")
+
+        if item.get("background"):
+            lines.append("")
+            lines.append(f"**Background**: {item['background']}")
+
+        if item.get("related_context"):
+            lines.append("")
+            lines.append(f"**Related**: {item['related_context']}")
+
+        if item.get("related_stories"):
+            for rs in item["related_stories"]:
+                lines.append(f"  - [{rs['title']}]({rs['url']}) ({rs['source']})")
 
         if tags_str:
             lines.append("")
