@@ -243,35 +243,6 @@ Content is scored 0-10:
 - `time_window_hours`: Fetch content from last N hours (first run only)
 
 
-## Project Structure
-
-```
-horizon/
-├── pyproject.toml          # Project dependencies
-├── README.md               # This file
-├── .env                    # API keys (create from .env.example)
-├── src/
-│   ├── main.py             # CLI entry point
-│   ├── models.py           # Data models
-│   ├── orchestrator.py     # Main workflow coordinator
-│   ├── scrapers/           # Platform scrapers
-│   │   ├── github.py
-│   │   ├── hackernews.py
-│   │   └── rss.py
-│   ├── ai/                 # AI analysis modules
-│   │   ├── client.py       # Multi-provider AI client
-│   │   ├── analyzer.py     # Content scoring
-│   │   ├── summarizer.py   # Daily summaries
-│   │   └── recommender.py  # Source recommendations
-│   └── storage/
-│       └── manager.py      # File storage
-├── data/
-│   ├── config.json         # Configuration
-│   ├── seen.json           # Deduplication state
-│   └── summaries/          # Generated Markdown files
-└── logs/                   # Application logs
-```
-
 ## Contributing
 
 Contributions welcome! Please:
