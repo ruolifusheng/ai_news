@@ -153,22 +153,6 @@ class Config(BaseModel):
     filtering: FilteringConfig
 
 
-class SeenItem(BaseModel):
-    """Record of a seen content item."""
-
-    first_seen: datetime
-    processed: bool = False
-    score: Optional[float] = None
-
-
-class SeenItemsData(BaseModel):
-    """Storage for seen items tracking."""
-
-    version: str = "1.0"
-    last_run: Optional[datetime] = None
-    items: Dict[str, SeenItem] = Field(default_factory=dict)
-
-
 class SourceRecommendation(BaseModel):
     """Recommended information source."""
 

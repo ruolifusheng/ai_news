@@ -3,6 +3,7 @@
 import json
 from typing import List
 from tenacity import retry, stop_after_attempt, wait_exponential
+from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, MofNCompleteColumn
 
 from .client import AIClient
 from .prompts import CONTENT_ANALYSIS_SYSTEM, CONTENT_ANALYSIS_USER
@@ -13,11 +14,6 @@ class ContentAnalyzer:
     """Analyzes content items using AI to determine importance."""
 
     def __init__(self, ai_client: AIClient):
-        """Initialize content analyzer.
-
-        Args:
-            ai_client: AI client for making completions
-        """
         self.client = ai_client
 
     async def analyze_batch(
@@ -25,32 +21,30 @@ class ContentAnalyzer:
         items: List[ContentItem],
         batch_size: int = 10
     ) -> List[ContentItem]:
-        """Analyze a batch of content items.
-
-        Args:
-            items: Content items to analyze
-            batch_size: Number of items to analyze concurrently
-
-        Returns:
-            List[ContentItem]: Items with AI analysis results filled in
-        """
         analyzed_items = []
 
-        # Process in batches to avoid overwhelming the API
-        for i in range(0, len(items), batch_size):
-            batch = items[i:i + batch_size]
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            MofNCompleteColumn(),
+            transient=True,
+        ) as progress:
+            task = progress.add_task("Analyzing", total=len(items))
 
-            for item in batch:
-                try:
-                    await self._analyze_item(item)
-                    analyzed_items.append(item)
-                except Exception as e:
-                    print(f"Error analyzing item {item.id}: {e}")
-                    # Add item with default score 0
-                    item.ai_score = 0.0
-                    item.ai_reason = "Analysis failed"
-                    item.ai_summary = item.title
-                    analyzed_items.append(item)
+            for i in range(0, len(items), batch_size):
+                batch = items[i:i + batch_size]
+                for item in batch:
+                    try:
+                        await self._analyze_item(item)
+                        analyzed_items.append(item)
+                    except Exception as e:
+                        print(f"Error analyzing item {item.id}: {e}")
+                        item.ai_score = 0.0
+                        item.ai_reason = "Analysis failed"
+                        item.ai_summary = item.title
+                        analyzed_items.append(item)
+                    progress.advance(task)
 
         return analyzed_items
 

@@ -44,8 +44,7 @@ class HorizonOrchestrator:
 
         try:
             # 1. Determine time window
-            seen_data = self.storage.load_seen_items()
-            since = self._determine_time_window(seen_data, force_hours)
+            since = self._determine_time_window(force_hours)
             self.console.print(f"📅 Fetching content since: {since.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
             # 2. Fetch content from all sources
@@ -56,19 +55,11 @@ class HorizonOrchestrator:
                 self.console.print("[yellow]No new content found. Exiting.[/yellow]")
                 return
 
-            # 3. Filter out seen items
-            new_items = self._filter_seen_items(all_items, seen_data)
-            self.console.print(f"🆕 {len(new_items)} new items (filtered {len(all_items) - len(new_items)} duplicates)\n")
-
-            if not new_items:
-                self.console.print("[yellow]No new items to process. Exiting.[/yellow]")
-                return
-
-            # 3.5. Merge cross-source duplicates (same URL from different sources)
-            merged_items = self._merge_cross_source_duplicates(new_items)
-            if len(merged_items) < len(new_items):
+            # 3. Merge cross-source duplicates (same URL from different sources)
+            merged_items = self._merge_cross_source_duplicates(all_items)
+            if len(merged_items) < len(all_items):
                 self.console.print(
-                    f"🔗 Merged {len(new_items) - len(merged_items)} cross-source duplicates "
+                    f"🔗 Merged {len(all_items) - len(merged_items)} cross-source duplicates "
                     f"→ {len(merged_items)} unique items\n"
                 )
 
@@ -138,47 +129,18 @@ class HorizonOrchestrator:
             except Exception as e:
                 self.console.print(f"[yellow]⚠️  Failed to copy summary to docs/: {e}[/yellow]\n")
 
-            # 9. Update seen items
-            for item in analyzed_items:
-                self.storage.mark_item_seen(item, seen_data)
-
-            seen_data.last_run = datetime.utcnow()
-            self.storage.save_seen_items(seen_data)
-
-            # 10. Cleanup old records
-            removed = self.storage.cleanup_old_seen_items(seen_data, days=30)
-            if removed > 0:
-                self.console.print(f"🧹 Cleaned up {removed} old records\n")
-                self.storage.save_seen_items(seen_data)
-
             self.console.print("[bold green]✅ Horizon completed successfully![/bold green]")
 
         except Exception as e:
             self.console.print(f"[bold red]❌ Error: {e}[/bold red]")
             raise
 
-    def _determine_time_window(self, seen_data, force_hours: int = None) -> datetime:
-        """Determine the time window for fetching content.
-
-        Args:
-            seen_data: Seen items data
-            force_hours: Optional override for time window in hours
-
-        Returns:
-            datetime: Start time for fetching
-        """
+    def _determine_time_window(self, force_hours: int = None) -> datetime:
         if force_hours:
             since = datetime.now(timezone.utc) - timedelta(hours=force_hours)
-        elif seen_data.last_run:
-            since = seen_data.last_run
         else:
-            # Default to configured time window
             hours = self.config.filtering.time_window_hours
             since = datetime.now(timezone.utc) - timedelta(hours=hours)
-
-        # Ensure timezone-aware
-        if since.tzinfo is None:
-            since = since.replace(tzinfo=timezone.utc)
         return since
 
     async def _fetch_all_sources(self, since: datetime) -> List[ContentItem]:
@@ -246,21 +208,6 @@ class HorizonOrchestrator:
         items = await scraper.fetch(since)
         self.console.print(f"   Found {len(items)} items from {name}")
         return items
-
-    def _filter_seen_items(self, items: List[ContentItem], seen_data) -> List[ContentItem]:
-        """Filter out items that have been seen before.
-
-        Args:
-            items: All fetched items
-            seen_data: Seen items data
-
-        Returns:
-            List[ContentItem]: New items only
-        """
-        return [
-            item for item in items
-            if not self.storage.is_item_seen(item.id, seen_data)
-        ]
 
     def _merge_cross_source_duplicates(self, items: List[ContentItem]) -> List[ContentItem]:
         """Merge items that point to the same URL from different sources.
