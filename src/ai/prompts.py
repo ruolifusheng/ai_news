@@ -125,6 +125,7 @@ Based on high-quality content samples, recommend:
 - GitHub users/repositories consistently producing valuable work
 - Blogs and RSS feeds worth following
 - Twitter accounts sharing insights
+- Reddit subreddits with high-quality technical discussion
 
 Criteria for recommendations:
 - Consistent high quality over multiple samples
@@ -142,7 +143,7 @@ Provide JSON response with recommendations:
 {{
   "recommendations": [
     {{
-      "source_type": "github|rss|twitter",
+      "source_type": "github|rss|twitter|reddit",
       "identifier": "<username/url>",
       "reason": "<why worth following>",
       "confidence": <0-1>,

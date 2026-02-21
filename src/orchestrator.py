@@ -13,6 +13,7 @@ from .scrapers.github import GitHubScraper
 from .scrapers.hackernews import HackerNewsScraper
 from .scrapers.rss import RSSScraper
 from .scrapers.twitter import TwitterScraper
+from .scrapers.reddit import RedditScraper
 from .ai.client import create_ai_client
 from .ai.analyzer import ContentAnalyzer
 from .ai.summarizer import DailySummarizer
@@ -211,6 +212,11 @@ class HorizonOrchestrator:
             if self.config.sources.twitter:
                 twitter_scraper = TwitterScraper(self.config.sources.twitter, client)
                 tasks.append(self._fetch_with_progress("Twitter", twitter_scraper, since))
+
+            # Reddit
+            if self.config.sources.reddit.enabled:
+                reddit_scraper = RedditScraper(self.config.sources.reddit, client)
+                tasks.append(self._fetch_with_progress("Reddit", reddit_scraper, since))
 
             # Fetch all concurrently
             results = await asyncio.gather(*tasks, return_exceptions=True)

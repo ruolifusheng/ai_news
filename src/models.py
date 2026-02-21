@@ -12,6 +12,7 @@ class SourceType(str, Enum):
     HACKERNEWS = "hackernews"
     RSS = "rss"
     TWITTER = "twitter"
+    REDDIT = "reddit"
 
 
 class ContentItem(BaseModel):
@@ -100,6 +101,32 @@ class TwitterSourceConfig(BaseModel):
     ])
 
 
+class RedditSubredditConfig(BaseModel):
+    """Configuration for monitoring a specific subreddit."""
+    subreddit: str
+    enabled: bool = True
+    sort: str = "hot"           # hot, new, top, rising
+    time_filter: str = "day"    # hour, day, week, month, year, all (only for top/controversial)
+    fetch_limit: int = 25
+    min_score: int = 10
+
+
+class RedditUserConfig(BaseModel):
+    """Configuration for monitoring a specific Reddit user."""
+    username: str               # without u/ prefix
+    enabled: bool = True
+    sort: str = "new"
+    fetch_limit: int = 10
+
+
+class RedditConfig(BaseModel):
+    """Reddit source configuration."""
+    enabled: bool = True
+    subreddits: List[RedditSubredditConfig] = Field(default_factory=list)
+    users: List[RedditUserConfig] = Field(default_factory=list)
+    fetch_comments: int = 5     # top comments per post, 0 to disable
+
+
 class SourcesConfig(BaseModel):
     """All sources configuration."""
 
@@ -107,6 +134,7 @@ class SourcesConfig(BaseModel):
     hackernews: HackerNewsConfig = Field(default_factory=HackerNewsConfig)
     rss: List[RSSSourceConfig] = Field(default_factory=list)
     twitter: List[TwitterSourceConfig] = Field(default_factory=list)
+    reddit: RedditConfig = Field(default_factory=RedditConfig)
 
 
 class FilteringConfig(BaseModel):

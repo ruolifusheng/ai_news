@@ -84,7 +84,7 @@ class ContentAnalyzer:
         meta = item.metadata
         engagement_items = []
         if meta.get("score"):
-            engagement_items.append(f"HN score: {meta['score']}")
+            engagement_items.append(f"score: {meta['score']}")
         if meta.get("descendants"):
             engagement_items.append(f"{meta['descendants']} comments")
         if meta.get("favorite_count"):
@@ -97,6 +97,8 @@ class ContentAnalyzer:
             engagement_items.append(f"{meta['views']} views")
         if meta.get("bookmarks"):
             engagement_items.append(f"{meta['bookmarks']} bookmarks")
+        if meta.get("upvote_ratio"):
+            engagement_items.append(f"upvote ratio: {meta['upvote_ratio']:.0%}")
         if engagement_items:
             discussion_parts.append(f"Engagement: {', '.join(engagement_items)}")
         if meta.get("discussion_url"):

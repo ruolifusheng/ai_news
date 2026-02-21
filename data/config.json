@@ -68,7 +68,30 @@
         "username": "OpenAI",
         "enabled": true
       }
-    ]
+    ],
+    "reddit": {
+      "enabled": true,
+      "subreddits": [
+        {
+          "subreddit": "MachineLearning",
+          "enabled": true,
+          "sort": "hot",
+          "time_filter": "day",
+          "fetch_limit": 15,
+          "min_score": 50
+        },
+        {
+          "subreddit": "programming",
+          "enabled": true,
+          "sort": "hot",
+          "time_filter": "day",
+          "fetch_limit": 10,
+          "min_score": 100
+        }
+      ],
+      "users": [],
+      "fetch_comments": 5
+    }
   },
   "filtering": {
     "ai_score_threshold": 6.0,
