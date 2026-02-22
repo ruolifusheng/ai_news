@@ -69,7 +69,7 @@ class RSSScraper(BaseScraper):
             # Expand environment variables in URL (e.g. ${LWN_TOKEN})
             feed_url = re.sub(
                 r'\$\{(\w+)\}',
-                lambda m: os.environ.get(m.group(1), m.group(0)),
+                lambda m: os.environ.get(m.group(1), m.group(0)).strip(),
                 str(source.url),
             )
 
