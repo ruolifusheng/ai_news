@@ -36,7 +36,7 @@ def main():
     print_banner()
 
     parser = argparse.ArgumentParser(description="Horizon - AI-Driven Information Aggregation System")
-    parser.add_argument("--hours", type=int, help="Force fetch from last N hours (ignoring seen history)")
+    parser.add_argument("--hours", type=int, help="Force fetch from last N hours")
     args = parser.parse_args()
 
     try:
@@ -92,8 +92,7 @@ def print_config_template():
       {
         "type": "user_events",
         "username": "torvalds",
-        "enabled": true,
-        "priority": "high"
+        "enabled": true
       }
     ],
     "hackernews": {

@@ -12,7 +12,6 @@ from .storage.manager import StorageManager
 from .scrapers.github import GitHubScraper
 from .scrapers.hackernews import HackerNewsScraper
 from .scrapers.rss import RSSScraper
-from .scrapers.twitter import TwitterScraper
 from .scrapers.reddit import RedditScraper
 from .ai.client import create_ai_client
 from .ai.analyzer import ContentAnalyzer
@@ -167,11 +166,6 @@ class HorizonOrchestrator:
                 rss_scraper = RSSScraper(self.config.sources.rss, client)
                 tasks.append(self._fetch_with_progress("RSS Feeds", rss_scraper, since))
 
-            # Twitter (via Nitter)
-            if self.config.sources.twitter:
-                twitter_scraper = TwitterScraper(self.config.sources.twitter, client)
-                tasks.append(self._fetch_with_progress("Twitter", twitter_scraper, since))
-
             # Reddit
             if self.config.sources.reddit.enabled:
                 reddit_scraper = RedditScraper(self.config.sources.reddit, client)
@@ -312,7 +306,6 @@ class HorizonOrchestrator:
         """
         self.console.print("📝 Generating daily summary...")
 
-        ai_client = create_ai_client(self.config.ai)
-        summarizer = DailySummarizer(ai_client)
+        summarizer = DailySummarizer()
 
         return await summarizer.generate_summary(items, date, total_fetched)

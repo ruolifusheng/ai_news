@@ -126,14 +126,16 @@ class ContentEnricher:
         Args:
             item: Content item to enrich (modified in-place via metadata)
         """
-        # Extract content text (without comments section)
+        # Extract content text and comments separately
         content_text = ""
+        comments_text = ""
         if item.content:
             if "--- Top Comments ---" in item.content:
-                content_text = item.content.split("--- Top Comments ---", 1)[0].strip()
+                main, comments_part = item.content.split("--- Top Comments ---", 1)
+                content_text = main.strip()[:4000]
+                comments_text = comments_part.strip()[:2000]
             else:
-                content_text = item.content
-        content_text = content_text[:4000] if content_text else ""
+                content_text = item.content[:4000]
 
         # Step 1: AI identifies concepts to explain
         queries = await self._extract_concepts(item, content_text)
@@ -155,6 +157,7 @@ class ContentEnricher:
             reason=item.ai_reason or "",
             tags=", ".join(item.ai_tags) if item.ai_tags else "",
             content=content_text,
+            comments_section=f"\n**Community Comments:**\n{comments_text}" if comments_text else "",
             web_context=web_context or "No web search results available.",
         )
 
@@ -192,3 +195,6 @@ class ContentEnricher:
 
         if result.get("background"):
             item.metadata["background"] = result["background"]
+
+        if result.get("community_discussion"):
+            item.metadata["community_discussion"] = result["community_discussion"]

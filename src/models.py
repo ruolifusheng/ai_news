@@ -11,7 +11,6 @@ class SourceType(str, Enum):
     GITHUB = "github"
     HACKERNEWS = "hackernews"
     RSS = "rss"
-    TWITTER = "twitter"
     REDDIT = "reddit"
 
 
@@ -61,7 +60,6 @@ class GitHubSourceConfig(BaseModel):
     owner: Optional[str] = None
     repo: Optional[str] = None
     enabled: bool = True
-    priority: str = "medium"
 
 
 class HackerNewsConfig(BaseModel):
@@ -79,26 +77,6 @@ class RSSSourceConfig(BaseModel):
     url: HttpUrl
     enabled: bool = True
     category: Optional[str] = None
-
-
-class TwitterSourceConfig(BaseModel):
-    """Twitter source configuration.
-
-    Supports two modes:
-    1. Direct RSS URL: Set rss_url to any working Twitter-to-RSS bridge
-       (self-hosted RSSHub, whitelisted xcancel, etc.)
-    2. Nitter discovery: Tries nitter_instances in order (most are dead in 2024+)
-    """
-
-    username: str
-    enabled: bool = True
-    # Direct RSS URL (preferred - bypasses Nitter instance discovery)
-    rss_url: Optional[str] = None
-    # Nitter instance URLs as fallback, tried in order
-    nitter_instances: List[str] = Field(default_factory=lambda: [
-        "https://xcancel.com",
-        "https://nitter.poast.org",
-    ])
 
 
 class RedditSubredditConfig(BaseModel):
@@ -133,7 +111,6 @@ class SourcesConfig(BaseModel):
     github: List[GitHubSourceConfig] = Field(default_factory=list)
     hackernews: HackerNewsConfig = Field(default_factory=HackerNewsConfig)
     rss: List[RSSSourceConfig] = Field(default_factory=list)
-    twitter: List[TwitterSourceConfig] = Field(default_factory=list)
     reddit: RedditConfig = Field(default_factory=RedditConfig)
 
 

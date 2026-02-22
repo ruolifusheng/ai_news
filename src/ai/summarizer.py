@@ -1,24 +1,21 @@
-"""Daily summary generation using AI."""
+"""Daily summary generation — pure programmatic rendering."""
 
-import json
-from typing import List
-from datetime import datetime
+from typing import List, Dict
+from collections import defaultdict
 
-from .client import AIClient
-from .prompts import DAILY_SUMMARY_SYSTEM, DAILY_SUMMARY_USER
 from ..models import ContentItem
 
 
 class DailySummarizer:
-    """Generates daily Markdown summaries of important content."""
+    """Generates daily Markdown summaries from pre-analyzed content items.
 
-    def __init__(self, ai_client: AIClient):
-        """Initialize daily summarizer.
+    No AI call needed — all data (score, summary, background, tags)
+    is already produced by the analyzer and enricher stages.
+    """
 
-        Args:
-            ai_client: AI client for making completions
-        """
-        self.client = ai_client
+    def __init__(self):
+        """Initialize daily summarizer."""
+        pass
 
     async def generate_summary(
         self,
@@ -28,8 +25,10 @@ class DailySummarizer:
     ) -> str:
         """Generate daily summary in Markdown format.
 
+        Items are split into highlights (score >= 9) and sections grouped by tag.
+
         Args:
-            items: High-scoring content items to include (enriched via metadata)
+            items: High-scoring content items (already enriched)
             date: Date string (YYYY-MM-DD)
             total_fetched: Total number of items fetched before filtering
 
@@ -39,67 +38,6 @@ class DailySummarizer:
         if not items:
             return self._generate_empty_summary(date, total_fetched)
 
-        # Prepare items as JSON for the AI, including discussion data
-        items_data = []
-        for item in items:
-            meta = item.metadata
-            entry = {
-                "title": item.title,
-                "url": str(item.url),
-                "score": item.ai_score,
-                "summary": meta.get("detailed_summary") or item.ai_summary,
-                "source": f"{item.source_type.value}/{item.author or 'unknown'}",
-                "tags": item.ai_tags,
-                "reason": item.ai_reason,
-            }
-
-            # Include discussion/engagement metadata for richer summaries
-            if meta.get("score") or meta.get("descendants"):
-                entry["hn_score"] = meta.get("score")
-                entry["hn_comments"] = meta.get("descendants")
-            if meta.get("discussion_url"):
-                entry["discussion_url"] = meta["discussion_url"]
-            if meta.get("favorite_count"):
-                entry["twitter_likes"] = meta["favorite_count"]
-                entry["twitter_retweets"] = meta.get("retweet_count", 0)
-            if meta.get("reply_count"):
-                entry["twitter_replies"] = meta["reply_count"]
-            if meta.get("views"):
-                entry["twitter_views"] = meta["views"]
-            if meta.get("bookmarks"):
-                entry["twitter_bookmarks"] = meta["bookmarks"]
-
-            # Include top comments excerpt for AI to synthesize
-            if item.content and "--- Top Comments ---" in item.content:
-                comments_part = item.content.split("--- Top Comments ---", 1)[1]
-                entry["top_comments"] = comments_part[:1200]
-
-            # Include pre-computed enrichment data from metadata
-            if meta.get("background"):
-                entry["background"] = meta["background"]
-
-            items_data.append(entry)
-
-        items_json = json.dumps(items_data, indent=2)
-
-        # Generate summary using AI
-        user_prompt = DAILY_SUMMARY_USER.format(
-            date=date,
-            count=len(items),
-            items_json=items_json
-        )
-
-        # Use client's max_tokens if available, otherwise default to a safe value
-        max_tokens = getattr(self.client, "max_tokens", 4096)
-
-        raw_response = await self.client.complete(
-            system=DAILY_SUMMARY_SYSTEM,
-            user=user_prompt,
-            temperature=0.5,
-            max_tokens=max_tokens
-        )
-
-        # Add header with metadata
         header = f"""# Horizon Daily - {date}
 
 > From {total_fetched} items, {len(items)} important content pieces were selected
@@ -107,96 +45,101 @@ class DailySummarizer:
 ---
 
 """
-        try:
-            # Clean response if it contains markdown code blocks
-            text = raw_response
-            if "```json" in text:
-                text = text.split("```json")[1].split("```")[0].strip()
-            elif "```" in text:
-                text = text.split("```")[1].strip()
-
-            data = json.loads(text)
-        except json.JSONDecodeError:
-            # If JSON parsing fails, return raw response as fallback
-            # Clean up potential markdown wrapper in raw response too
-            clean_text = raw_response
-            if "```" in clean_text:
-                clean_text = clean_text.replace("```json", "").replace("```", "")
-            return header + clean_text.strip()
-
-        # Build markdown programmatically
         sections = []
 
-        # Highlights section
-        if data.get("highlights"):
-            sections.append("## Today's Highlights ⭐️\n")
-            for item in data["highlights"]:
+        # Split into highlights and regular
+        highlights = [i for i in items if (i.ai_score or 0) >= 9.0]
+        regular = [i for i in items if (i.ai_score or 0) < 9.0]
+
+        if highlights:
+            sections.append("## Today's Highlights\n")
+            for item in highlights:
                 sections.append(self._format_item(item))
 
-        # Other sections
-        for section in data.get("sections", []):
-            title = section.get("title", "Other Updates")
-            sections.append(f"## {title}\n")
-            for item in section.get("items", []):
+        # Group regular items by primary tag
+        grouped = self._group_by_tag(regular)
+        for section_title, group_items in grouped.items():
+            sections.append(f"## {section_title}\n")
+            for item in group_items:
                 sections.append(self._format_item(item))
 
         return header + "\n".join(sections)
 
-    def _format_item(self, item: dict) -> str:
-        """Format a single item into Markdown with explicit spacing."""
-        title = item.get("title", "Untitled").replace("[", "(").replace("]", ")")
-        url = item.get("url", "#")
-        score = item.get("score", "?")
-        summary = item.get("summary", "")
+    def _format_item(self, item: ContentItem) -> str:
+        """Format a single ContentItem into Markdown."""
+        title = item.title.replace("[", "(").replace("]", ")")
+        url = str(item.url)
+        score = item.ai_score or "?"
+        meta = item.metadata
 
-        # Format sources
-        sources = item.get("sources", [])
-        if isinstance(sources, list):
-            sources_str = ", ".join(sources)
-        else:
-            sources_str = str(sources)
+        summary = meta.get("detailed_summary") or item.ai_summary or ""
+        source = item.source_type.value
+        if meta.get("subreddit"):
+            source += f"/r/{meta['subreddit']}"
+        source += f"/{item.author or 'unknown'}"
 
-        # Format tags
-        tags = item.get("tags", [])
-        if isinstance(tags, list):
-            tags_str = ", ".join([f"`#{t}`" for t in tags])
-        else:
-            tags_str = ""
-
-        # Build item markdown block - using headlines and explicit spacing
+        # Build item block
         lines = [
             f"### [{title}]({url}) ⭐️ {score}/10",
             "",
-            f"{summary}",
+            summary,
             "",
-            f"*Sources: {sources_str}*"
+            f"*Source: {source}*",
         ]
 
-        if item.get("community_perspective"):
+        if meta.get("background"):
             lines.append("")
-            lines.append(f"**Community**: {item['community_perspective']}")
+            lines.append(f"**Background**: {meta['background']}")
 
-        if item.get("background"):
+        if meta.get("community_discussion"):
             lines.append("")
-            lines.append(f"**Background**: {item['background']}")
+            lines.append(f"**Discussion**: {meta['community_discussion']}")
 
-        if tags_str:
+        # Tags
+        if item.ai_tags:
+            tags_str = ", ".join([f"`#{t}`" for t in item.ai_tags])
             lines.append("")
             lines.append(f"**Tags**: {tags_str}")
 
-        # separator for clarity
         return "\n".join(lines) + "\n\n---\n\n"
 
+    def _group_by_tag(self, items: List[ContentItem]) -> Dict[str, List[ContentItem]]:
+        """Group items by their primary tag into named sections."""
+        TAG_SECTIONS = {
+            "ai": "AI / Machine Learning",
+            "ml": "AI / Machine Learning",
+            "machine-learning": "AI / Machine Learning",
+            "deep-learning": "AI / Machine Learning",
+            "llm": "AI / Machine Learning",
+            "nlp": "AI / Machine Learning",
+            "systems": "Systems & Infrastructure",
+            "infrastructure": "Systems & Infrastructure",
+            "performance": "Systems & Infrastructure",
+            "linux": "Systems & Infrastructure",
+            "kernel": "Systems & Infrastructure",
+            "security": "Security",
+            "programming": "Programming & Tools",
+            "rust": "Programming & Tools",
+            "python": "Programming & Tools",
+            "golang": "Programming & Tools",
+            "tools": "Programming & Tools",
+            "open-source": "Open Source",
+        }
+
+        grouped: Dict[str, List[ContentItem]] = defaultdict(list)
+        for item in items:
+            section = "Other Updates"
+            for tag in (item.ai_tags or []):
+                tag_lower = tag.lower()
+                if tag_lower in TAG_SECTIONS:
+                    section = TAG_SECTIONS[tag_lower]
+                    break
+            grouped[section].append(item)
+
+        return dict(grouped)
+
     def _generate_empty_summary(self, date: str, total_fetched: int) -> str:
-        """Generate summary when no high-scoring items were found.
-
-        Args:
-            date: Date string
-            total_fetched: Total items fetched
-
-        Returns:
-            str: Empty summary message
-        """
+        """Generate summary when no high-scoring items were found."""
         return f"""# Horizon Daily - {date}
 
 > Analyzed {total_fetched} items, but none met the importance threshold.

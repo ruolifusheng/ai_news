@@ -164,7 +164,7 @@ class GitHubScraper(BaseScraper):
             published_at=created_at,
             metadata={
                 "event_type": event_type,
-                "repo": repo_name
+                "repo": repo_name,
             }
         )
 
@@ -211,7 +211,7 @@ class GitHubScraper(BaseScraper):
                     metadata={
                         "repo": f"{owner}/{repo}",
                         "tag": release["tag_name"],
-                        "prerelease": release.get("prerelease", False)
+                        "prerelease": release.get("prerelease", False),
                     }
                 )
                 items.append(item)

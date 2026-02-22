@@ -5,7 +5,7 @@ title: Source Scrapers
 
 # Source Scrapers
 
-Horizon fetches content from five source types. All scrapers inherit from `BaseScraper`, share an async HTTP client, and implement a `fetch(since)` method that returns a list of `ContentItem` objects. Sources are fetched concurrently via `asyncio.gather`.
+Horizon fetches content from four source types. All scrapers inherit from `BaseScraper`, share an async HTTP client, and implement a `fetch(since)` method that returns a list of `ContentItem` objects. Sources are fetched concurrently via `asyncio.gather`.
 
 ## Hacker News
 
@@ -88,31 +88,6 @@ Fetches any Atom/RSS feed using the `feedparser` library. Tries multiple date fi
 - `category` — optional tag for grouping (e.g., `"programming"`, `"microblog"`)
 
 **Extracted data**: title, URL, author, content (from `summary`/`description`/`content` fields), feed name, category, and entry tags.
-
-## Twitter/X
-
-**File**: `src/scrapers/twitter.py`
-
-Uses a 3-tier fallback system since Twitter lacks a stable free API:
-
-1. **Syndication API** — `syndication.twitter.com` embed endpoint. Parses `__NEXT_DATA__` JSON from the HTML response. No auth required.
-2. **Custom RSS URL** — user-provided RSS bridge (e.g., a self-hosted Nitter).
-3. **Nitter instances** — tries known public instances (`xcancel.com`, `nitter.poast.org` by default).
-
-After fetching, the top 10 tweets (by favorites) are enriched via the [FxTwitter API](https://api.fxtwitter.com) for engagement data: views, bookmarks, reply counts, and community notes.
-
-**Config** (`sources.twitter`, list of entries):
-
-```json
-{
-  "username": "kaboroevich",
-  "enabled": true,
-  "rss_url": null,
-  "nitter_instances": ["https://xcancel.com", "https://nitter.poast.org"]
-}
-```
-
-**Extracted data**: tweet text, author, favorites, retweets, replies, views, bookmarks, and community notes (if any).
 
 ## Reddit
 

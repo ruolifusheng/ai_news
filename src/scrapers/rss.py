@@ -2,6 +2,8 @@
 
 import calendar
 import logging
+import os
+import re
 from datetime import datetime, timezone
 from typing import List
 from email.utils import parsedate_to_datetime
@@ -64,8 +66,15 @@ class RSSScraper(BaseScraper):
         items = []
 
         try:
+            # Expand environment variables in URL (e.g. ${LWN_TOKEN})
+            feed_url = re.sub(
+                r'\$\{(\w+)\}',
+                lambda m: os.environ.get(m.group(1), m.group(0)),
+                str(source.url),
+            )
+
             # Fetch feed content
-            response = await self.client.get(str(source.url))
+            response = await self.client.get(feed_url)
             response.raise_for_status()
 
             # Parse feed
@@ -96,7 +105,7 @@ class RSSScraper(BaseScraper):
                     metadata={
                         "feed_name": source.name,
                         "category": source.category,
-                        "tags": [tag.term for tag in entry.get("tags", [])]
+                        "tags": [tag.term for tag in entry.get("tags", [])],
                     }
                 )
                 items.append(item)

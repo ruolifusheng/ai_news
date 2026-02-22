@@ -13,15 +13,25 @@
       {
         "type": "user_events",
         "username": "karpathy",
-        "enabled": true,
-        "priority": "high"
+        "enabled": true
       },
       {
         "type": "repo_releases",
-        "owner": "astral-sh",
-        "repo": "uv",
-        "enabled": true,
-        "priority": "medium"
+        "owner": "vllm-project",
+        "repo": "vllm",
+        "enabled": true
+      },
+      {
+        "type": "repo_releases",
+        "owner": "sgl-project",
+        "repo": "sglang",
+        "enabled": true
+      },
+      {
+        "type": "repo_releases",
+        "owner": "triton-lang",
+        "repo": "triton",
+        "enabled": true
       }
     ],
     "hackernews": {
@@ -41,20 +51,12 @@
         "url": "https://mshibanami.github.io/GitHubTrendingRSS/daily/all.xml",
         "enabled": true,
         "category": "github-trending"
-      }
-    ],
-    "twitter": [
-      {
-        "username": "karpathy",
-        "enabled": true
       },
       {
-        "username": "ylecun",
-        "enabled": true
-      },
-      {
-        "username": "OpenAI",
-        "enabled": true
+        "name": "LWN.net",
+        "url": "https://lwn.net/headlines/full_text?key=${LWN_KEY}",
+        "enabled": true,
+        "category": "linux-kernel"
       }
     ],
     "reddit": {
@@ -75,6 +77,14 @@
           "time_filter": "day",
           "fetch_limit": 10,
           "min_score": 100
+        },
+        {
+          "subreddit": "LocalLLaMA",
+          "enabled": true,
+          "sort": "hot",
+          "time_filter": "day",
+          "fetch_limit": 15,
+          "min_score": 30
         }
       ],
       "users": [],
@@ -83,6 +93,6 @@
   },
   "filtering": {
     "ai_score_threshold": 6.0,
-    "time_window_hours": 72
+    "time_window_hours": 48
   }
 }
