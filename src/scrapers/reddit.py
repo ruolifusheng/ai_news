@@ -14,7 +14,14 @@ from ..models import ContentItem, RedditConfig, RedditSubredditConfig, RedditUse
 logger = logging.getLogger(__name__)
 
 REDDIT_BASE = "https://www.reddit.com"
-USER_AGENT = "Horizon/1.0 (content aggregator; +https://github.com/horizon)"
+REDLIB_INSTANCES = [
+    "https://redlib.r4fo.com",
+    "https://l.opnxng.com",
+    "https://redlib.perennialte.ch",
+    "https://redlib.privacyredirect.com",
+    "https://redlib.nadeko.net",
+]
+USER_AGENT = "Horizon/1.0 (content aggregator; +https://github.com/thysrael/horizon)"
 
 
 class RedditScraper(BaseScraper):
@@ -23,6 +30,7 @@ class RedditScraper(BaseScraper):
     def __init__(self, config: RedditConfig, http_client: httpx.AsyncClient):
         super().__init__(config.model_dump(), http_client)
         self.reddit_config = config
+        self._working_base: Optional[str] = None  # Cache working base URL
 
     async def fetch(self, since: datetime) -> List[ContentItem]:
         if not self.config.get("enabled", True):
@@ -53,8 +61,8 @@ class RedditScraper(BaseScraper):
         if cfg.sort in ("top", "controversial"):
             params["t"] = cfg.time_filter
 
-        url = f"{REDDIT_BASE}/r/{cfg.subreddit}/{cfg.sort}.json"
-        data = await self._reddit_get(url, params)
+        path = f"/r/{cfg.subreddit}/{cfg.sort}.json"
+        data = await self._reddit_get(path, params)
         if not data:
             return []
 
@@ -66,8 +74,8 @@ class RedditScraper(BaseScraper):
 
     async def _fetch_user(self, cfg: RedditUserConfig, since: datetime) -> List[ContentItem]:
         params = {"limit": min(cfg.fetch_limit, 100), "sort": cfg.sort, "raw_json": 1}
-        url = f"{REDDIT_BASE}/user/{cfg.username}/submitted.json"
-        data = await self._reddit_get(url, params)
+        path = f"/user/{cfg.username}/submitted.json"
+        data = await self._reddit_get(path, params)
         if not data:
             return []
 
@@ -123,10 +131,10 @@ class RedditScraper(BaseScraper):
 
     async def _fetch_comments(self, subreddit: str, post_id: str) -> List[dict]:
         fetch_limit = self.reddit_config.fetch_comments
-        url = f"{REDDIT_BASE}/r/{subreddit}/comments/{post_id}.json"
+        path = f"/r/{subreddit}/comments/{post_id}.json"
         params = {"limit": fetch_limit, "depth": 1, "sort": "top", "raw_json": 1}
 
-        data = await self._reddit_get(url, params)
+        data = await self._reddit_get(path, params)
         if not data or not isinstance(data, list) or len(data) < 2:
             return []
 
@@ -194,17 +202,70 @@ class RedditScraper(BaseScraper):
             },
         )
 
-    async def _reddit_get(self, url: str, params: dict) -> Optional[dict]:
+    async def _try_get(self, base: str, path: str, params: dict) -> Optional[httpx.Response]:
+        """Try a single GET request against a specific base URL.
+
+        Returns the response if successful, None on 403/blocked.
+        Raises on other HTTP errors.
+        """
         headers = {"User-Agent": USER_AGENT}
-        try:
-            response = await self.client.get(url, params=params, headers=headers)
-            if response.status_code == 429:
-                retry_after = int(response.headers.get("Retry-After", 5))
-                logger.warning("Reddit rate limited, retrying after %ds", retry_after)
-                await asyncio.sleep(retry_after)
-                response = await self.client.get(url, params=params, headers=headers)
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPError as e:
-            logger.warning("Reddit request failed for %s: %s", url, e)
+        url = f"{base}{path}"
+        response = await self.client.get(url, params=params, headers=headers)
+        if response.status_code == 403:
             return None
+        if response.status_code == 429:
+            retry_after = int(response.headers.get("Retry-After", 5))
+            logger.warning("Reddit rate limited, retrying after %ds", retry_after)
+            await asyncio.sleep(retry_after)
+            response = await self.client.get(url, params=params, headers=headers)
+            if response.status_code == 403:
+                return None
+        response.raise_for_status()
+        return response
+
+    async def _reddit_get(self, path: str, params: dict) -> Optional[dict]:
+        """GET a Reddit JSON endpoint, with Redlib fallback on 403.
+
+        Tries www.reddit.com first. On 403 (datacenter IP blocked),
+        falls back to Redlib instances. Caches the working base URL
+        for subsequent requests in the same session.
+        """
+        # If we already found a working base, try it first
+        bases_to_try = []
+        if self._working_base:
+            bases_to_try.append(self._working_base)
+        else:
+            bases_to_try.append(REDDIT_BASE)
+
+        # Try the preferred base
+        try:
+            response = await self._try_get(bases_to_try[0], path, params)
+            if response is not None:
+                self._working_base = bases_to_try[0]
+                return response.json()
+        except httpx.HTTPError as e:
+            logger.warning("Reddit request failed for %s%s: %s", bases_to_try[0], path, e)
+
+        # Primary failed with 403, try Redlib instances
+        if self._working_base != REDDIT_BASE:
+            # Already using a Redlib instance that stopped working, reset
+            self._working_base = None
+
+        logger.info("Reddit blocked (403), trying Redlib instances...")
+        for instance in REDLIB_INSTANCES:
+            if instance == self._working_base:
+                continue
+            try:
+                response = await self._try_get(instance, path, params)
+                if response is not None:
+                    data = response.json()
+                    # Verify it looks like valid Reddit JSON
+                    if isinstance(data, (dict, list)):
+                        logger.info("Using Redlib instance: %s", instance)
+                        self._working_base = instance
+                        return data
+            except (httpx.HTTPError, ValueError):
+                continue
+
+        logger.warning("All Reddit endpoints failed for %s", path)
+        return None
