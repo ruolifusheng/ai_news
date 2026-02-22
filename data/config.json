@@ -68,15 +68,7 @@
           "sort": "hot",
           "time_filter": "day",
           "fetch_limit": 15,
-          "min_score": 50
-        },
-        {
-          "subreddit": "programming",
-          "enabled": true,
-          "sort": "hot",
-          "time_filter": "day",
-          "fetch_limit": 10,
-          "min_score": 100
+          "min_score": 60
         },
         {
           "subreddit": "LocalLLaMA",
@@ -84,15 +76,15 @@
           "sort": "hot",
           "time_filter": "day",
           "fetch_limit": 15,
-          "min_score": 30
+          "min_score": 60
         }
       ],
       "users": [],
-      "fetch_comments": 5
+      "fetch_comments": 10
     }
   },
   "filtering": {
-    "ai_score_threshold": 5.0,
-    "time_window_hours": 48
+    "ai_score_threshold": 6.0,
+    "time_window_hours": 24
   }
 }
