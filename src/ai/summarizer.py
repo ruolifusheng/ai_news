@@ -108,18 +108,32 @@ class DailySummarizer:
             or ""
         )
 
-        source = item.source_type.value
+        # Source line with parts joined by " · ", link appended at end
+        source_type = item.source_type.value
+        source_parts = [source_type]
         if meta.get("subreddit"):
-            source += f"/r/{meta['subreddit']}"
-        source += f"/{item.author or 'unknown'}"
+            source_parts.append(f"r/{meta['subreddit']}")
+        source_parts.append(item.author or "unknown")
+        if item.published_at:
+            day = item.published_at.strftime("%d").lstrip("0")
+            source_parts.append(item.published_at.strftime(f"%b {day}, %H:%M"))
+        source_parts.append(f"[\u2197]({url})")  # ↗
+        source_line = " \u00b7 ".join(source_parts)  # ·
+
+        # <summary>: plain text only (no interactive elements) + optional one-liner preview
+        summary_title = f"## {title} \u2b50\ufe0f {score}/10"  # ⭐️
+        if item.ai_summary:
+            summary_block = f"<summary>\n{summary_title}\n\n{item.ai_summary}\n</summary>"
+        else:
+            summary_block = f"<summary>\n{summary_title}\n</summary>"
 
         lines = [
-            f'<details markdown="1">',
-            f'<summary>## <a href="{url}">{title}</a> ⭐️ {score}/10</summary>',
+            '<details markdown="1">',
+            summary_block,
             "",
             summary,
             "",
-            f"*{labels['source']}: {source}*",
+            source_line,
         ]
 
         if background:
@@ -147,4 +161,3 @@ class DailySummarizer:
             f"> Analyzed {total_fetched} items, but none met the importance threshold.\n\n"
             + labels["empty_body"]
         )
-
