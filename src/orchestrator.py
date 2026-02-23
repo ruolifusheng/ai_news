@@ -1,6 +1,7 @@
 """Main orchestrator coordinating the entire workflow."""
 
 import asyncio
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict
 from urllib.parse import urlparse
@@ -78,6 +79,15 @@ class HorizonOrchestrator:
             self.console.print(
                 f"⭐️ {len(important_items)} items scored ≥ {threshold}\n"
             )
+
+            # Show per-sub-source selection breakdown
+            selected_counts: Dict[str, int] = defaultdict(int)
+            for item in important_items:
+                key = f"{item.source_type.value}/{self._sub_source_label(item)}"
+                selected_counts[key] += 1
+            for source_key, count in sorted(selected_counts.items()):
+                self.console.print(f"      • {source_key}: {count}")
+            self.console.print("")
 
             # 6. Search related stories + enrich with background knowledge (2nd AI pass)
             await self._enrich_important_items(important_items)
@@ -204,7 +214,30 @@ class HorizonOrchestrator:
         self.console.print(f"🔍 Fetching from {name}...")
         items = await scraper.fetch(since)
         self.console.print(f"   Found {len(items)} items from {name}")
+
+        # Show per-sub-source breakdown when there are multiple sub-sources
+        sub_counts: Dict[str, int] = defaultdict(int)
+        for item in items:
+            sub_counts[self._sub_source_label(item)] += 1
+        if len(sub_counts) > 1:
+            for sub, count in sorted(sub_counts.items()):
+                self.console.print(f"      • {sub}: {count}")
+
         return items
+
+    @staticmethod
+    def _sub_source_label(item: ContentItem) -> str:
+        """Return a human-readable sub-source label for an item."""
+        meta = item.metadata
+        if meta.get("subreddit"):
+            return f"r/{meta['subreddit']}"
+        if meta.get("feed_name"):
+            return meta["feed_name"]
+        if meta.get("channel"):
+            return f"@{meta['channel']}"
+        if meta.get("repo"):
+            return meta["repo"]
+        return item.author or "unknown"
 
     def _merge_cross_source_duplicates(self, items: List[ContentItem]) -> List[ContentItem]:
         """Merge items that point to the same URL from different sources.
