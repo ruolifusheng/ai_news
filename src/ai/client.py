@@ -206,5 +206,7 @@ def create_ai_client(config: AIConfig) -> AIClient:
         return OpenAIClient(config)
     elif config.provider == AIProvider.GEMINI:
         return GeminiClient(config)
+    elif config.provider == AIProvider.DOUBAO:
+        return OpenAIClient(config)
     else:
         raise ValueError(f"Unsupported AI provider: {config.provider}")

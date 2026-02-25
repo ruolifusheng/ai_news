@@ -40,6 +40,7 @@ class AIProvider(str, Enum):
     ANTHROPIC = "anthropic"
     OPENAI = "openai"
     GEMINI = "gemini"
+    DOUBAO = "doubao"
 
 
 class AIConfig(BaseModel):
