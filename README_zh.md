@@ -19,13 +19,9 @@
 ![DeepSeek](https://img.shields.io/badge/DeepSeek-0A6DC2?style=flat-square&logo=deepseek&logoColor=white)
 ![Doubao](https://img.shields.io/badge/Doubao-00D6C2?style=flat-square&logoColor=white)
 
-<p align="center">
-  <img src="docs/assets/horizon-header.svg" alt="Horizon Header" />
-</p>
-
 Horizon 从多个可自定义的信息源中收集新闻，利用 AI 对新闻进行打分与过滤，最终生成一份包含摘要、社区讨论和背景知识的中英双语日报。
 
-[📖 在线演示](https://thysrael.github.io/Horizon/) · [📋 配置指南](docs/configuration.md) · [English](README.md)
+[📖 在线演示](https://thysrael.github.io/Horizon/) · [📋 配置指南](https://thysrael.github.io/Horizon/configuration) · [English](README.md)
 
 </div>
 
@@ -34,22 +30,12 @@ Horizon 从多个可自定义的信息源中收集新闻，利用 AI 对新闻�
 <table>
 <tr>
 <td width="50%">
-<p align="center"><strong>日报总览（English）</strong></p>
-<img src="docs/assets/overview_en.png" alt="日报总览 英文" />
+<p align="center"><strong>日报总览</strong></p>
+<img src="docs/assets/overview_zh.png" alt="日报总览" />
 </td>
 <td width="50%">
-<p align="center"><strong>日报总览（中文）</strong></p>
-<img src="docs/assets/overview_zh.png" alt="日报总览 中文" />
-</td>
-</tr>
-<tr>
-<td width="50%">
-<p align="center"><strong>新闻详情（English）</strong></p>
-<img src="docs/assets/one_news_en.png" alt="新闻详情 英文" />
-</td>
-<td width="50%">
-<p align="center"><strong>新闻详情（中文）</strong></p>
-<img src="docs/assets/one_news_zh.png" alt="新闻详情 中文" />
+<p align="center"><strong>新闻详情</strong></p>
+<img src="docs/assets/one_news_zh.png" alt="新闻详情" />
 </td>
 </tr>
 </table>
@@ -192,7 +178,7 @@ Horizon 非常适合作为 **GitHub Actions** 定时任务运行。查看 [`.git
 - [x] 社区讨论收集
 - [x] GitHub Pages 部署
 - [ ] 邮件 / Slack / Webhook 通知
-- [ ] Web UI 仪表板
+- [x] Web UI 仪表板
 - [ ] 更多信息源（Twitter/X、Discord 等）
 - [ ] 按信息源自定义打分 Prompt
 

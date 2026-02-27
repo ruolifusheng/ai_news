@@ -19,13 +19,9 @@
 ![DeepSeek](https://img.shields.io/badge/DeepSeek-0A6DC2?style=flat-square&logo=deepseek&logoColor=white)
 ![Doubao](https://img.shields.io/badge/Doubao-00D6C2?style=flat-square&logoColor=white)
 
-<p align="center">
-  <img src="docs/assets/horizon-header.svg" alt="Horizon Header" />
-</p>
-
 Horizon collects news from multiple customizable sources, uses AI to score and filter them, and generates a daily briefing — complete with summaries, community discussions, and background explanations in both English and Chinese.
 
-[📖 Live Demo](https://thysrael.github.io/Horizon/) · [📋 Configuration Guide](docs/configuration.md) · [简体中文](README_zh.md)
+[📖 Live Demo](https://thysrael.github.io/Horizon/) · [📋 Configuration Guide](https://thysrael.github.io/Horizon/configuration) · [简体中文](README_zh.md)
 
 </div>
 
@@ -34,22 +30,12 @@ Horizon collects news from multiple customizable sources, uses AI to score and f
 <table>
 <tr>
 <td width="50%">
-<p align="center"><strong>Daily Overview (English)</strong></p>
-<img src="docs/assets/overview_en.png" alt="Daily Overview English" />
+<p align="center"><strong>Daily Overview</strong></p>
+<img src="docs/assets/overview_en.png" alt="Daily Overview" />
 </td>
 <td width="50%">
-<p align="center"><strong>Daily Overview (中文)</strong></p>
-<img src="docs/assets/overview_zh.png" alt="Daily Overview Chinese" />
-</td>
-</tr>
-<tr>
-<td width="50%">
-<p align="center"><strong>News Detail (English)</strong></p>
-<img src="docs/assets/one_news_en.png" alt="News Detail English" />
-</td>
-<td width="50%">
-<p align="center"><strong>News Detail (中文)</strong></p>
-<img src="docs/assets/one_news_zh.png" alt="News Detail Chinese" />
+<p align="center"><strong>News Detail</strong></p>
+<img src="docs/assets/one_news_en.png" alt="News Detail" />
 </td>
 </tr>
 </table>
@@ -181,7 +167,7 @@ Horizon works great as a **GitHub Actions** cron job. See [`.github/workflows/da
 - [x] Community discussion collection
 - [x] GitHub Pages deployment
 - [ ] Email / Slack / Webhook notification
-- [ ] Web UI dashboard
+- [x] Web UI dashboard
 - [ ] More source types (Twitter/X, Discord, etc.)
 - [ ] Custom scoring prompts per source
 
